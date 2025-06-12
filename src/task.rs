@@ -418,4 +418,54 @@ mod tests {
         supervisor.stop(None);
         let _ = handle.await;
     }
+
+    #[ractor::concurrency::test]
+    #[serial]
+    async fn test_max_children_limit() {
+        before_each().await;
+
+        let (supervisor, handle) = TaskSupervisor::spawn(
+            "max-child-supervisor".into(),
+            TaskSupervisorOptions {
+                max_children: Some(1),
+                max_restarts: 3,
+                max_window: Duration::from_secs(10),
+                reset_after: None,
+            },
+        )
+        .await
+        .unwrap();
+
+        // First task runs for a bit so it's still active when we try spawning another
+        TaskSupervisor::spawn_task(
+            supervisor.clone(),
+            || async {
+                sleep(Duration::from_millis(500)).await;
+                Ok(())
+            },
+            TaskOptions::new().name("first-task".into()),
+        )
+        .await
+        .unwrap();
+
+        // Second task triggers meltdown by sending a SpawnChild message without a reply
+        let task_fn = TaskFn::new(|| async { Ok(()) });
+        let spec = ChildSpec {
+            id: "second-task".into(),
+            spawn_fn: SpawnFn::new(move |sup, id| {
+                let task_fn = task_fn.clone();
+                spawn_task_actor(id, task_fn, sup)
+            }),
+            restart: Restart::Temporary,
+            backoff_fn: None,
+            reset_after: None,
+        };
+        supervisor
+            .send_message(DynamicSupervisorMsg::SpawnChild { spec, reply: None })
+            .unwrap();
+
+        // Supervisor should stop due to meltdown
+        let _ = handle.await;
+        assert_eq!(supervisor.get_status(), ActorStatus::Stopped);
+    }
 }
