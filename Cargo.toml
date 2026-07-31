@@ -11,14 +11,14 @@ repository = "https://github.com/simke9445/ractor-supervisor"
 readme = "./README.md"
 homepage = "https://github.com/simke9445/ractor-supervisor"
 categories = ["asynchronous"]
-rust-version = "1.83.0"
+rust-version = "1.88.0"
 
 [features]
 default = ["async-trait"]
 async-trait = ["ractor/async-trait"]
 
 [dependencies]
-ractor = { version = "0.14.3" }
+ractor = { version = "0.16.2" }
 thiserror = "2.0.11"
 if_chain = "1.0.2"
 futures-util = "0.3.31"
