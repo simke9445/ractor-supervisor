@@ -1,6 +1,6 @@
 [package]
 name = "ractor-supervisor"
-version = "0.1.9"
+version = "0.2.0"
 authors = ["https://github.com/simke9445"]
 description = "Supervisor module for ractor framework."
 documentation = "https://docs.rs/ractor-supervisor"
